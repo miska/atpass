@@ -7,8 +7,6 @@ pass_ is an encrypted on-disk password store.
 
 .. _pass: https://www.passwordstore.org/
 
-.. versionadded:: 2017.7.0
-
 Setup
 -----
 
@@ -88,11 +86,8 @@ def _fetch_secret(pass_path):
     proc = Popen(cmd.split(" "), stdout=PIPE, stderr=PIPE)
     pass_data, pass_error = proc.communicate()
 
-    # The version of pass used during development sent output to
-    # stdout instead of stderr even though its returncode was non zero.
     if proc.returncode or not pass_data:
-        log.warning("Could not fetch secret: %s %s", pass_data, pass_error)
-        pass_data = pass_path
+        return None
     return pass_data.strip()
 
 
@@ -101,7 +96,16 @@ def _decrypt_object(obj):
     Recursively try to find a pass path (string) that can be handed off to pass
     """
     if isinstance(obj, six.string_types):
-        return _fetch_secret(obj)
+        objs = obj.split(' ')
+        if objs[0] == '@pass':
+            objs.pop(0)
+            for path in objs:
+                secret =  _fetch_secret(path)
+                if secret:
+                    return secret
+            return obj
+        else:
+            return obj
     elif isinstance(obj, dict):
         for pass_key, pass_path in six.iteritems(obj):
             obj[pass_key] = _decrypt_object(pass_path)

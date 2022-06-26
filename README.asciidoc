@@ -1,0 +1,38 @@
+`atpass` - Password store renderer for Salt Stack
+=================================================
+
+This is a https://docs.saltproject.io/en/latest/ref/renderers/index.html[custom
+renderer] for https://saltproject.io/[SaltStack]. It is using awesome
+https://www.passwordstore.org/[Password Store] project to store the secrets.
+
+Usage
+-----
+
+This renderer expects to be run after data rendered, so it will have a
+structure at the input. Typically you want to specify the following shebang in
+your pillar/state.
+
+-------------------------------------------------------------------------------
+#!jinja|yaml|atpass
+-------------------------------------------------------------------------------
+
+That way, you have ordinary `jinja|yaml` parsing, but at the end, secrets are
+propagated from Password Store as well.
+
+Generally it ignores any element except those with values starting with
+`@pass`. Those will be expanded if possible. After a key word, it expects the
+list of possible paths within Password Store. You can provide multiple paths,
+first one that succeeds is used. If none exists, the origin value is used. This
+allows you to specify the default value and override it in specific cases. For
+example like this:
+
+-------------------------------------------------------------------------------
+#!jinja|yaml|atpass
+
+mysql:
+  server:
+    root_password: "@pass mysql/{{ grains['id'] }}/root mysql/default/root"
+
+-------------------------------------------------------------------------------
+
+
